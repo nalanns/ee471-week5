@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech-to-Text</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>🎤 Speech-to-Text</h1>
+        <p class="subtitle">Powered by Azure Cognitive Services</p>
+
+        <label class="section-label">Record or upload audio to convert to text:</label>
+
+        <div class="record-controls">
+            <button id="startBtn" class="btn btn-primary">Start Recording</button>
+            <button id="stopBtn" class="btn btn-danger" disabled>Stop Recording</button>
+        </div>
+
+        <div id="recordingIndicator" class="recording-indicator hidden">● Recording...</div>
+        <audio id="playback" controls class="hidden"></audio>
+
+        <div class="file-input">
+            <input type="file" id="fileInput" accept=".wav,audio/wav">
+        </div>
+
+        <div class="actions">
+            <button id="transcribeBtn" class="btn btn-primary">Transcribe Audio</button>
+            <button id="clearBtn" class="btn btn-secondary">Clear</button>
+        </div>
+
+        <div id="status" class="status hidden"></div>
+
+        <div id="resultPanel" class="result hidden">
+            <h3>Transcription:</h3>
+            <p id="resultText"></p>
+            <button id="copyBtn" class="btn btn-primary btn-small">Copy Text</button>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
