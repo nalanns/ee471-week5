@@ -14,6 +14,9 @@
         <div class="tabs" role="tablist">
             <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="tts-tab" data-tab="tts-tab">Text to Speech</button>
             <button class="tab-btn" role="tab" aria-selected="false" aria-controls="stt-tab" data-tab="stt-tab">Speech to Text</button>
+            <button class="tab-btn" role="tab" aria-selected="false" aria-controls="diarize-tab" data-tab="diarize-tab">Diarization</button>
+            <button class="tab-btn" role="tab" aria-selected="false" aria-controls="translate-tab" data-tab="translate-tab">Translation</button>
+            <button class="tab-btn" role="tab" aria-selected="false" aria-controls="pron-tab" data-tab="pron-tab">Pronunciation</button>
         </div>
 
         <!-- Text to Speech -->
@@ -40,28 +43,139 @@
             <label class="section-label">Record or upload audio to convert to text:</label>
 
             <div class="record-controls">
-                <button id="startBtn" class="btn btn-primary">Start Recording</button>
-                <button id="stopBtn" class="btn btn-danger" disabled>Stop Recording</button>
+                <button id="sttStartBtn" class="btn btn-primary">Start Recording</button>
+                <button id="sttStopBtn" class="btn btn-danger" disabled>Stop Recording</button>
             </div>
-
-            <div id="recordingIndicator" class="recording-indicator hidden">● Recording...</div>
-            <audio id="playback" controls class="hidden"></audio>
-
+            <div id="sttRecordingIndicator" class="recording-indicator hidden">● Recording...</div>
+            <audio id="sttPlayback" controls class="playback hidden"></audio>
             <div class="file-input">
-                <input type="file" id="fileInput" accept=".wav,audio/wav">
+                <input type="file" id="sttFileInput" accept=".wav,audio/wav">
             </div>
 
             <div class="actions">
-                <button id="transcribeBtn" class="btn btn-primary">Transcribe Audio</button>
+                <button id="sttActionBtn" class="btn btn-primary">Transcribe Audio</button>
                 <button id="sttClearBtn" class="btn btn-secondary">Clear</button>
             </div>
 
             <div id="sttStatus" class="status" hidden></div>
 
-            <div id="resultPanel" class="result hidden">
+            <div id="sttResultPanel" class="result hidden">
                 <h3>Transcription:</h3>
-                <p id="resultText"></p>
-                <button id="copyBtn" class="btn btn-primary btn-small">Copy Text</button>
+                <p id="sttResultText"></p>
+                <button id="sttCopyBtn" class="btn btn-primary btn-small">Copy Text</button>
+            </div>
+        </section>
+
+        <!-- Diarization -->
+        <section id="diarize-tab" class="tab-panel" role="tabpanel" hidden>
+            <label class="section-label">Record or upload a conversation with several speakers:</label>
+
+            <div class="record-controls">
+                <button id="diarizeStartBtn" class="btn btn-primary">Start Recording</button>
+                <button id="diarizeStopBtn" class="btn btn-danger" disabled>Stop Recording</button>
+            </div>
+            <div id="diarizeRecordingIndicator" class="recording-indicator hidden">● Recording...</div>
+            <audio id="diarizePlayback" controls class="playback hidden"></audio>
+            <div class="file-input">
+                <input type="file" id="diarizeFileInput" accept=".wav,audio/wav">
+            </div>
+
+            <div class="actions">
+                <button id="diarizeActionBtn" class="btn btn-primary">Identify Speakers</button>
+                <button id="diarizeClearBtn" class="btn btn-secondary">Clear</button>
+            </div>
+
+            <div id="diarizeStatus" class="status" hidden></div>
+
+            <div id="diarizeResultPanel" class="result hidden">
+                <h3>Conversation:</h3>
+                <ul id="diarizeSegments" class="segments"></ul>
+            </div>
+        </section>
+
+        <!-- Translation -->
+        <section id="translate-tab" class="tab-panel" role="tabpanel" hidden>
+            <div class="field">
+                <label for="translateTarget">Translate English speech into:</label>
+                <select id="translateTarget">
+                    <option value="tr">Turkish</option>
+                    <option value="de">German</option>
+                    <option value="fr">French</option>
+                    <option value="es">Spanish</option>
+                </select>
+            </div>
+
+            <label class="section-label">Record or upload English audio:</label>
+
+            <div class="record-controls">
+                <button id="translateStartBtn" class="btn btn-primary">Start Recording</button>
+                <button id="translateStopBtn" class="btn btn-danger" disabled>Stop Recording</button>
+            </div>
+            <div id="translateRecordingIndicator" class="recording-indicator hidden">● Recording...</div>
+            <audio id="translatePlayback" controls class="playback hidden"></audio>
+            <div class="file-input">
+                <input type="file" id="translateFileInput" accept=".wav,audio/wav">
+            </div>
+
+            <div class="actions">
+                <button id="translateActionBtn" class="btn btn-primary">Translate Audio</button>
+                <button id="translateClearBtn" class="btn btn-secondary">Clear</button>
+            </div>
+
+            <div id="translateStatus" class="status" hidden></div>
+
+            <div id="translateResultPanel" class="result hidden">
+                <h3>Recognized (English):</h3>
+                <p id="translateRecognized"></p>
+                <h3>Translation (<span id="translateLanguage"></span>):</h3>
+                <p id="translateText"></p>
+            </div>
+        </section>
+
+        <!-- Pronunciation -->
+        <section id="pron-tab" class="tab-panel" role="tabpanel" hidden>
+            <div class="field">
+                <label for="pronReference">Reference text to read aloud:</label>
+                <input type="text" id="pronReference" class="text-field" placeholder="The quick brown fox jumps over the lazy dog.">
+            </div>
+
+            <label class="section-label">Record or upload yourself reading it:</label>
+
+            <div class="record-controls">
+                <button id="pronStartBtn" class="btn btn-primary">Start Recording</button>
+                <button id="pronStopBtn" class="btn btn-danger" disabled>Stop Recording</button>
+            </div>
+            <div id="pronRecordingIndicator" class="recording-indicator hidden">● Recording...</div>
+            <audio id="pronPlayback" controls class="playback hidden"></audio>
+            <div class="file-input">
+                <input type="file" id="pronFileInput" accept=".wav,audio/wav">
+            </div>
+
+            <div class="actions">
+                <button id="pronActionBtn" class="btn btn-primary">Assess Pronunciation</button>
+                <button id="pronClearBtn" class="btn btn-secondary">Clear</button>
+            </div>
+
+            <div id="pronStatus" class="status" hidden></div>
+
+            <div id="pronResultPanel" class="result hidden">
+                <div class="scores">
+                    <div class="score"><span id="pronAccuracy" class="score-value"></span><span class="score-label">Accuracy</span></div>
+                    <div class="score"><span id="pronFluency" class="score-value"></span><span class="score-label">Fluency</span></div>
+                    <div class="score"><span id="pronCompleteness" class="score-value"></span><span class="score-label">Completeness</span></div>
+                    <div class="score"><span id="pronPronunciation" class="score-value"></span><span class="score-label">Pronunciation</span></div>
+                </div>
+
+                <h3>Recognized:</h3>
+                <p id="pronRecognized"></p>
+
+                <h3>Words:</h3>
+                <div id="pronWords" class="words"></div>
+                <div class="legend">
+                    <span class="legend-item good">≥ 80</span>
+                    <span class="legend-item fair">60–79</span>
+                    <span class="legend-item poor">&lt; 60</span>
+                </div>
             </div>
         </section>
     </main>

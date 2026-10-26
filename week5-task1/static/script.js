@@ -95,87 +95,9 @@ ttsClearBtn.addEventListener("click", () => {
     textInput.focus();
 });
 
-// ---------- Speech to Text ----------
+// ---------- WAV recording (Web Audio API) ----------
 
 const TARGET_SAMPLE_RATE = 16000;
-
-const startBtn = document.getElementById("startBtn");
-const stopBtn = document.getElementById("stopBtn");
-const recordingIndicator = document.getElementById("recordingIndicator");
-const playback = document.getElementById("playback");
-const fileInput = document.getElementById("fileInput");
-const transcribeBtn = document.getElementById("transcribeBtn");
-const sttClearBtn = document.getElementById("sttClearBtn");
-const sttStatusEl = document.getElementById("sttStatus");
-const resultPanel = document.getElementById("resultPanel");
-const resultText = document.getElementById("resultText");
-const copyBtn = document.getElementById("copyBtn");
-
-let audioContext = null;
-let mediaStream = null;
-let sourceNode = null;
-let processorNode = null;
-let recordedChunks = [];
-let inputSampleRate = 44100;
-
-// The audio that will be sent: the last recording or the last selected file
-let currentAudio = null;
-
-// Recording (Web Audio API)
-
-async function startRecording() {
-    try {
-        mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    } catch (err) {
-        showStatus(sttStatusEl, `Microphone access denied: ${err.message}`, "error");
-        return;
-    }
-
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    inputSampleRate = audioContext.sampleRate;
-    sourceNode = audioContext.createMediaStreamSource(mediaStream);
-    processorNode = audioContext.createScriptProcessor(4096, 1, 1);
-    recordedChunks = [];
-
-    processorNode.onaudioprocess = (e) => {
-        recordedChunks.push(new Float32Array(e.inputBuffer.getChannelData(0)));
-    };
-
-    sourceNode.connect(processorNode);
-    processorNode.connect(audioContext.destination);
-
-    startBtn.disabled = true;
-    stopBtn.disabled = false;
-    recordingIndicator.classList.remove("hidden");
-    hideStatus(sttStatusEl);
-}
-
-function stopRecording() {
-    processorNode.disconnect();
-    sourceNode.disconnect();
-    mediaStream.getTracks().forEach((t) => t.stop());
-    audioContext.close();
-
-    startBtn.disabled = false;
-    stopBtn.disabled = true;
-    recordingIndicator.classList.add("hidden");
-
-    const samples = mergeChunks(recordedChunks);
-    recordedChunks = [];
-    if (samples.length === 0) {
-        showStatus(sttStatusEl, "No audio was recorded.", "error");
-        return;
-    }
-
-    const downsampled = downsample(samples, inputSampleRate, TARGET_SAMPLE_RATE);
-    const wavBlob = encodeWav(downsampled, TARGET_SAMPLE_RATE);
-
-    currentAudio = { blob: wavBlob, name: "recording.wav" };
-    fileInput.value = "";
-    playback.src = URL.createObjectURL(wavBlob);
-    playback.classList.remove("hidden");
-    showStatus(sttStatusEl, "Recording ready. Click \"Transcribe Audio\".", "success");
-}
 
 function mergeChunks(chunks) {
     const length = chunks.reduce((sum, c) => sum + c.length, 0);
@@ -240,80 +162,345 @@ function encodeWav(samples, sampleRate) {
     return new Blob([view], { type: "audio/wav" });
 }
 
-// File upload
+// Wires up a tab's Start/Stop buttons, recording indicator, playback and .wav file input.
+// The audio to send is the last recording or the last selected file.
+function createAudioInput(prefix, statusEl, actionLabel) {
+    const startBtn = document.getElementById(`${prefix}StartBtn`);
+    const stopBtn = document.getElementById(`${prefix}StopBtn`);
+    const recordingIndicator = document.getElementById(`${prefix}RecordingIndicator`);
+    const playback = document.getElementById(`${prefix}Playback`);
+    const fileInput = document.getElementById(`${prefix}FileInput`);
 
-function onFileSelected() {
-    const file = fileInput.files[0];
-    if (!file) return;
-    if (!file.name.toLowerCase().endsWith(".wav")) {
-        showStatus(sttStatusEl, "Please select a .wav file.", "error");
-        fileInput.value = "";
-        return;
-    }
-    currentAudio = { blob: file, name: file.name };
-    playback.src = URL.createObjectURL(file);
-    playback.classList.remove("hidden");
-    hideStatus(sttStatusEl);
-}
+    let audioContext = null;
+    let mediaStream = null;
+    let sourceNode = null;
+    let processorNode = null;
+    let recordedChunks = [];
+    let inputSampleRate = 44100;
+    let currentAudio = null;
+    let playbackUrl = null;
 
-// Transcription
-
-async function transcribe() {
-    if (!currentAudio) {
-        showStatus(sttStatusEl, "Please record audio or select a WAV file first.", "error");
-        return;
-    }
-
-    const formData = new FormData();
-    formData.append("audio", currentAudio.blob, currentAudio.name);
-
-    transcribeBtn.disabled = true;
-    showStatus(sttStatusEl, "Transcribing...", "info");
-
-    try {
-        const response = await fetch("/api/stt", { method: "POST", body: formData });
-        const data = await response.json();
-        if (!response.ok) {
-            throw new Error(data.error || `Request failed (${response.status})`);
-        }
-
-        if (data.text) {
-            resultText.textContent = data.text;
-            showStatus(sttStatusEl, "Transcription complete!", "success");
+    function setPlayback(blob) {
+        if (playbackUrl) URL.revokeObjectURL(playbackUrl);
+        playbackUrl = blob ? URL.createObjectURL(blob) : null;
+        if (playbackUrl) {
+            playback.src = playbackUrl;
+            playback.classList.remove("hidden");
         } else {
-            resultText.textContent = "(No speech recognized)";
-            showStatus(sttStatusEl, "No speech was recognized in the audio.", "error");
+            playback.removeAttribute("src");
+            playback.classList.add("hidden");
         }
-        resultPanel.classList.remove("hidden");
-    } catch (err) {
-        showStatus(sttStatusEl, `Error: ${err.message}`, "error");
-    } finally {
-        transcribeBtn.disabled = false;
     }
+
+    async function startRecording() {
+        try {
+            mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch (err) {
+            showStatus(statusEl, `Microphone access denied: ${err.message}`, "error");
+            return;
+        }
+
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        inputSampleRate = audioContext.sampleRate;
+        sourceNode = audioContext.createMediaStreamSource(mediaStream);
+        processorNode = audioContext.createScriptProcessor(4096, 1, 1);
+        recordedChunks = [];
+
+        processorNode.onaudioprocess = (e) => {
+            recordedChunks.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+        };
+
+        sourceNode.connect(processorNode);
+        processorNode.connect(audioContext.destination);
+
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        recordingIndicator.classList.remove("hidden");
+        hideStatus(statusEl);
+    }
+
+    function stopRecording() {
+        processorNode.disconnect();
+        sourceNode.disconnect();
+        mediaStream.getTracks().forEach((t) => t.stop());
+        audioContext.close();
+
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+        recordingIndicator.classList.add("hidden");
+
+        const samples = mergeChunks(recordedChunks);
+        recordedChunks = [];
+        if (samples.length === 0) {
+            showStatus(statusEl, "No audio was recorded.", "error");
+            return;
+        }
+
+        const downsampled = downsample(samples, inputSampleRate, TARGET_SAMPLE_RATE);
+        const wavBlob = encodeWav(downsampled, TARGET_SAMPLE_RATE);
+
+        currentAudio = { blob: wavBlob, name: "recording.wav" };
+        fileInput.value = "";
+        setPlayback(wavBlob);
+        showStatus(statusEl, `Recording ready. Click "${actionLabel}".`, "success");
+    }
+
+    function onFileSelected() {
+        const file = fileInput.files[0];
+        if (!file) return;
+        if (!file.name.toLowerCase().endsWith(".wav")) {
+            showStatus(statusEl, "Please select a .wav file.", "error");
+            fileInput.value = "";
+            return;
+        }
+        currentAudio = { blob: file, name: file.name };
+        setPlayback(file);
+        hideStatus(statusEl);
+    }
+
+    startBtn.addEventListener("click", startRecording);
+    stopBtn.addEventListener("click", stopRecording);
+    fileInput.addEventListener("change", onFileSelected);
+
+    return {
+        getAudio: () => currentAudio,
+        clear() {
+            currentAudio = null;
+            fileInput.value = "";
+            setPlayback(null);
+        },
+    };
 }
 
-function clearTranscription() {
-    currentAudio = null;
-    fileInput.value = "";
-    playback.removeAttribute("src");
-    playback.classList.add("hidden");
-    resultText.textContent = "";
-    resultPanel.classList.add("hidden");
-    hideStatus(sttStatusEl);
+// Sends the audio (plus any extra form fields) and returns the JSON response
+async function postAudio(url, audio, fields = {}) {
+    const formData = new FormData();
+    formData.append("audio", audio.blob, audio.name);
+    for (const [name, value] of Object.entries(fields)) formData.append(name, value);
+
+    const response = await fetch(url, { method: "POST", body: formData });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+        throw new Error(data.error || `Request failed (${response.status})`);
+    }
+    return data;
 }
 
-async function copyText() {
+// Sets up an audio tab: recorder, action button, Clear button, status and result panel.
+// validate() returns an error message or nothing; send(audio) returns the response data;
+// render(data) fills the result panel and returns [message, statusType].
+function setupAudioTab({ prefix, actionLabel, busyMessage, validate, send, render, reset }) {
+    const actionBtn = document.getElementById(`${prefix}ActionBtn`);
+    const clearBtn = document.getElementById(`${prefix}ClearBtn`);
+    const statusEl = document.getElementById(`${prefix}Status`);
+    const resultPanel = document.getElementById(`${prefix}ResultPanel`);
+    const audioInput = createAudioInput(prefix, statusEl, actionLabel);
+
+    actionBtn.addEventListener("click", async () => {
+        const audio = audioInput.getAudio();
+        if (!audio) {
+            showStatus(statusEl, "Please record audio or select a WAV file first.", "error");
+            return;
+        }
+        const problem = validate && validate();
+        if (problem) {
+            showStatus(statusEl, problem, "error");
+            return;
+        }
+
+        actionBtn.disabled = true;
+        showStatus(statusEl, busyMessage, "info");
+
+        try {
+            const data = await send(audio);
+            const [message, type] = render(data);
+            resultPanel.classList.remove("hidden");
+            showStatus(statusEl, message, type);
+        } catch (err) {
+            showStatus(statusEl, `Error: ${err.message}`, "error");
+        } finally {
+            actionBtn.disabled = false;
+        }
+    });
+
+    clearBtn.addEventListener("click", () => {
+        audioInput.clear();
+        resultPanel.classList.add("hidden");
+        if (reset) reset();
+        hideStatus(statusEl);
+    });
+
+    return { statusEl };
+}
+
+// ---------- Speech to Text ----------
+
+const sttResultText = document.getElementById("sttResultText");
+const sttCopyBtn = document.getElementById("sttCopyBtn");
+
+const sttTab = setupAudioTab({
+    prefix: "stt",
+    actionLabel: "Transcribe Audio",
+    busyMessage: "Transcribing...",
+    send: (audio) => postAudio("/api/stt", audio),
+    render(data) {
+        if (data.text) {
+            sttResultText.textContent = data.text;
+            return ["Transcription complete!", "success"];
+        }
+        sttResultText.textContent = "(No speech recognized)";
+        return ["No speech was recognized in the audio.", "error"];
+    },
+    reset() {
+        sttResultText.textContent = "";
+    },
+});
+
+sttCopyBtn.addEventListener("click", async () => {
     try {
-        await navigator.clipboard.writeText(resultText.textContent);
-        showStatus(sttStatusEl, "Text copied to clipboard!", "success");
+        await navigator.clipboard.writeText(sttResultText.textContent);
+        showStatus(sttTab.statusEl, "Text copied to clipboard!", "success");
     } catch (err) {
-        showStatus(sttStatusEl, "Could not copy text.", "error");
+        showStatus(sttTab.statusEl, "Could not copy text.", "error");
     }
+});
+
+// ---------- Diarization ----------
+
+const SPEAKER_COLORS = ["#667eea", "#e67e22", "#16a085", "#c0392b", "#8e44ad", "#2980b9"];
+const diarizeSegments = document.getElementById("diarizeSegments");
+
+setupAudioTab({
+    prefix: "diarize",
+    actionLabel: "Identify Speakers",
+    busyMessage: "Identifying speakers...",
+    send: (audio) => postAudio("/api/diarize", audio),
+    render(data) {
+        diarizeSegments.replaceChildren();
+        const colors = new Map();
+
+        for (const segment of data.segments) {
+            if (!colors.has(segment.speaker)) {
+                colors.set(segment.speaker, SPEAKER_COLORS[colors.size % SPEAKER_COLORS.length]);
+            }
+            const color = colors.get(segment.speaker);
+
+            const item = document.createElement("li");
+            item.className = "segment";
+            item.style.borderLeftColor = color;
+            const speaker = document.createElement("span");
+            speaker.className = "speaker";
+            speaker.style.color = color;
+            speaker.textContent = `${segment.speaker}:`;
+            item.append(speaker, ` ${segment.text}`);
+            diarizeSegments.append(item);
+        }
+
+        if (data.segments.length === 0) {
+            const item = document.createElement("li");
+            item.className = "segment";
+            item.textContent = "(No speech recognized)";
+            diarizeSegments.append(item);
+            return ["No speech was recognized in the audio.", "error"];
+        }
+        const count = colors.size;
+        return [`Found ${count} speaker${count === 1 ? "" : "s"}.`, "success"];
+    },
+    reset() {
+        diarizeSegments.replaceChildren();
+    },
+});
+
+// ---------- Translation ----------
+
+const translateTarget = document.getElementById("translateTarget");
+const translateRecognized = document.getElementById("translateRecognized");
+const translateLanguage = document.getElementById("translateLanguage");
+const translateText = document.getElementById("translateText");
+
+setupAudioTab({
+    prefix: "translate",
+    actionLabel: "Translate Audio",
+    busyMessage: "Translating...",
+    send(audio) {
+        translateLanguage.textContent = translateTarget.selectedOptions[0].textContent;
+        return postAudio("/api/translate", audio, { target: translateTarget.value });
+    },
+    render(data) {
+        if (data.recognized) {
+            translateRecognized.textContent = data.recognized;
+            translateText.textContent = data.translation;
+            return ["Translation complete!", "success"];
+        }
+        translateRecognized.textContent = "(No speech recognized)";
+        translateText.textContent = "";
+        return ["No speech was recognized in the audio.", "error"];
+    },
+    reset() {
+        translateRecognized.textContent = "";
+        translateText.textContent = "";
+    },
+});
+
+// ---------- Pronunciation ----------
+
+const pronReference = document.getElementById("pronReference");
+const pronRecognized = document.getElementById("pronRecognized");
+const pronWords = document.getElementById("pronWords");
+const pronScores = {
+    accuracy: document.getElementById("pronAccuracy"),
+    fluency: document.getElementById("pronFluency"),
+    completeness: document.getElementById("pronCompleteness"),
+    pronunciation: document.getElementById("pronPronunciation"),
+};
+
+function scoreClass(score) {
+    if (score >= 80) return "good";
+    if (score >= 60) return "fair";
+    return "poor";
 }
 
-startBtn.addEventListener("click", startRecording);
-stopBtn.addEventListener("click", stopRecording);
-fileInput.addEventListener("change", onFileSelected);
-transcribeBtn.addEventListener("click", transcribe);
-sttClearBtn.addEventListener("click", clearTranscription);
-copyBtn.addEventListener("click", copyText);
+setupAudioTab({
+    prefix: "pron",
+    actionLabel: "Assess Pronunciation",
+    busyMessage: "Assessing pronunciation...",
+    validate: () => (pronReference.value.trim() ? null : "Please enter the reference text."),
+    send: (audio) =>
+        postAudio("/api/pronunciation", audio, { reference_text: pronReference.value.trim() }),
+    render(data) {
+        for (const [name, el] of Object.entries(pronScores)) {
+            el.textContent = Math.round(data[name]);
+            el.className = `score-value ${scoreClass(data[name])}`;
+        }
+
+        pronRecognized.textContent = data.recognized || "(No speech recognized)";
+
+        pronWords.replaceChildren();
+        for (const word of data.words) {
+            const chip = document.createElement("span");
+            chip.className = `word ${scoreClass(word.accuracy)}`;
+            chip.title = `Accuracy: ${Math.round(word.accuracy)}`;
+
+            const text = document.createElement("span");
+            text.className = "word-text";
+            text.textContent = word.word;
+            chip.append(text);
+
+            if (word.error_type && word.error_type !== "None") {
+                chip.classList.add(`word-${word.error_type.toLowerCase()}`);
+                const error = document.createElement("span");
+                error.className = "word-error";
+                error.textContent = word.error_type;
+                chip.append(error);
+            }
+            pronWords.append(chip);
+        }
+
+        if (!data.recognized) return ["No speech was recognized in the audio.", "error"];
+        return ["Pronunciation assessment complete!", "success"];
+    },
+    reset() {
+        pronRecognized.textContent = "";
+        pronWords.replaceChildren();
+    },
+});
