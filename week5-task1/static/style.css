@@ -1,9 +1,10 @@
 * {
     box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
 body {
-    margin: 0;
     min-height: 100vh;
     display: flex;
     align-items: center;
@@ -34,7 +35,42 @@ h1 {
     color: #777;
 }
 
-label {
+/* ---------- Tabs ---------- */
+
+.tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    border-bottom: 2px solid #eee;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 12px 16px;
+    margin-bottom: -2px;
+    border: none;
+    border-bottom: 3px solid transparent;
+    background: none;
+    font: inherit;
+    font-weight: 600;
+    color: #777;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+}
+
+.tab-btn:hover {
+    color: #764ba2;
+}
+
+.tab-btn.active {
+    color: #764ba2;
+    border-bottom-color: #764ba2;
+}
+
+/* ---------- Shared form controls ---------- */
+
+label,
+.section-label {
     display: block;
     margin-bottom: 8px;
     font-weight: 600;
@@ -61,6 +97,13 @@ textarea:focus {
     margin-top: 16px;
 }
 
+.record-controls,
+.actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
 .btn {
     display: inline-block;
     padding: 12px 20px;
@@ -72,11 +115,13 @@ textarea:focus {
     text-align: center;
     text-decoration: none;
     cursor: pointer;
-    transition: opacity 0.2s;
+    transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
 }
 
-.btn:hover {
+.btn:hover:not(:disabled) {
     opacity: 0.9;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
 .btn:disabled {
@@ -84,7 +129,9 @@ textarea:focus {
     cursor: not-allowed;
 }
 
-.buttons .btn {
+.buttons .btn,
+.record-controls .btn,
+.actions .btn {
     flex: 1;
 }
 
@@ -93,7 +140,11 @@ textarea:focus {
 }
 
 .btn-secondary {
-    background: #6c757d;
+    background: #95a5a6;
+}
+
+.btn-danger {
+    background: #e74c3c;
 }
 
 .btn-download {
@@ -101,10 +152,19 @@ textarea:focus {
     margin-top: 12px;
 }
 
+.btn-small {
+    flex: none;
+    padding: 8px 16px;
+    font-size: 14px;
+}
+
+/* ---------- Status ---------- */
+
 .status {
-    margin-top: 16px;
+    margin: 16px 0;
     padding: 12px;
     border-radius: 8px;
+    font-weight: 500;
 }
 
 .status.success {
@@ -116,6 +176,13 @@ textarea:focus {
     background: #f8d7da;
     color: #721c24;
 }
+
+.status.info {
+    background: #e8eaf6;
+    color: #3f51b5;
+}
+
+/* ---------- Text to Speech ---------- */
 
 .audio-panel {
     margin-top: 24px;
@@ -134,6 +201,71 @@ textarea:focus {
     width: 100%;
 }
 
+/* ---------- Speech to Text ---------- */
+
+.recording-indicator {
+    color: #e74c3c;
+    font-weight: 600;
+    margin-bottom: 15px;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    50% { opacity: 0.4; }
+}
+
+#playback {
+    width: 100%;
+    margin-bottom: 15px;
+}
+
+.file-input {
+    margin-bottom: 20px;
+}
+
+.file-input input {
+    width: 100%;
+    padding: 10px;
+    border: 2px dashed #ccc;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.result {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+}
+
+.result h3 {
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.result p {
+    color: #333;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    margin-bottom: 15px;
+}
+
+/* ---------- Visibility ---------- */
+
 [hidden] {
     display: none !important;
+}
+
+.hidden {
+    display: none;
+}
+
+@media (max-width: 480px) {
+    .card {
+        padding: 25px;
+    }
+
+    .record-controls,
+    .actions {
+        flex-direction: column;
+    }
 }
