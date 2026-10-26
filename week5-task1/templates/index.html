@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text-to-Speech</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <main class="card">
+        <h1>🎤 Text-to-Speech</h1>
+        <p class="subtitle">Powered by Azure Cognitive Services</p>
+
+        <label for="text-input">Enter text to convert to speech:</label>
+        <textarea id="text-input" rows="6" placeholder="Type something..."></textarea>
+
+        <div class="buttons">
+            <button id="synthesize-btn" class="btn btn-primary">Synthesize Speech</button>
+            <button id="clear-btn" class="btn btn-secondary">Clear</button>
+        </div>
+
+        <div id="status" class="status" hidden></div>
+
+        <section id="audio-panel" class="audio-panel" hidden>
+            <h2>Generated Audio:</h2>
+            <audio id="audio-player" controls></audio>
+            <a id="download-btn" class="btn btn-download" download="speech.wav">Download Audio</a>
+        </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
