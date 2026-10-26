@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="shell">
+        <button type="button" id="mic" class="mic" aria-label="Start voice command" aria-pressed="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="9" y="3" width="6" height="11" rx="3"/>
+                <path d="M6 11a6 6 0 0 0 12 0M12 17v4M9 21h6" fill="none"/>
+            </svg>
+        </button>
+        <main class="calculator">
+            <output id="display" class="display" aria-live="polite">0</output>
+            <div class="info">
+                <p id="heard" class="heard" aria-live="polite"></p>
+                <p id="status" class="status" role="status"></p>
+            </div>
+            <div class="keys">
+                <button type="button" class="key" data-digit="7">7</button>
+                <button type="button" class="key" data-digit="8">8</button>
+                <button type="button" class="key" data-digit="9">9</button>
+                <button type="button" class="key" data-op="/" aria-label="divide">÷</button>
+
+                <button type="button" class="key" data-digit="4">4</button>
+                <button type="button" class="key" data-digit="5">5</button>
+                <button type="button" class="key" data-digit="6">6</button>
+                <button type="button" class="key" data-op="*" aria-label="multiply">×</button>
+
+                <button type="button" class="key" data-digit="1">1</button>
+                <button type="button" class="key" data-digit="2">2</button>
+                <button type="button" class="key" data-digit="3">3</button>
+                <button type="button" class="key" data-op="-">-</button>
+
+                <button type="button" class="key" data-digit="0">0</button>
+                <button type="button" class="key" data-digit=".">.</button>
+                <button type="button" class="key" data-equals>=</button>
+                <button type="button" class="key" data-op="+">+</button>
+            </div>
+        </main>
+    </div>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,241 @@
+:root {
+    --navy: #243060;
+    --light-blue: #DCE8F9;
+    --page-bg: #F5F5F5;
+    --radius-body: 12px;
+    --radius-key: 12px;
+    --red: #D93636;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: var(--page-bg);
+    font-family: "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.shell {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.mic {
+    flex: none;
+    width: 72px;
+    height: 72px;
+    border: none;
+    border-radius: 50%;
+    background: var(--navy);
+    color: var(--light-blue);
+    cursor: pointer;
+    transition: background 0.15s, transform 0.05s;
+}
+
+.mic svg {
+    width: 32px;
+    height: 32px;
+    fill: currentColor;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+}
+
+.mic:active {
+    transform: scale(0.96);
+}
+
+.mic:focus-visible {
+    outline: 3px solid var(--navy);
+    outline-offset: 3px;
+}
+
+.mic.recording {
+    background: var(--red);
+    color: #ffffff;
+    animation: pulse 1.2s ease-in-out infinite;
+}
+
+.mic.busy {
+    opacity: 0.6;
+    cursor: progress;
+}
+
+@keyframes pulse {
+    50% {
+        box-shadow: 0 0 0 10px rgba(217, 54, 54, 0.25);
+    }
+}
+
+.calculator {
+    width: min(490px, 100%);
+    padding: 48px;
+    background: var(--navy);
+    border-radius: var(--radius-body);
+}
+
+.display {
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    height: 166px;
+    padding: 20px 24px;
+    margin-bottom: 8px;
+    background: var(--light-blue);
+    color: var(--navy);
+    border-radius: var(--radius-key);
+    font-size: 40px;
+    font-weight: 600;
+    text-align: right;
+    overflow-wrap: anywhere;
+    overflow: hidden;
+}
+
+.display.error {
+    font-size: 22px;
+}
+
+.info {
+    min-height: 40px;
+    margin-bottom: 8px;
+    color: var(--light-blue);
+    font-size: 14px;
+    text-align: right;
+}
+
+.info p {
+    margin: 0;
+    min-height: 20px;
+    overflow-wrap: anywhere;
+}
+
+.heard {
+    font-style: italic;
+    transition: opacity 0.3s;
+}
+
+.heard:empty,
+.status:empty {
+    visibility: hidden;
+}
+
+.status.error {
+    color: #FFB3B3;
+}
+
+.key.pressed {
+    filter: brightness(0.85);
+    transform: scale(0.96);
+}
+
+.keys {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+.key {
+    aspect-ratio: 1;
+    border: none;
+    border-radius: var(--radius-key);
+    background: var(--light-blue);
+    color: var(--navy);
+    font: inherit;
+    font-size: 30px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: filter 0.1s, transform 0.05s;
+}
+
+.key:hover {
+    filter: brightness(0.95);
+}
+
+.key:active {
+    transform: scale(0.96);
+}
+
+.key:focus-visible {
+    outline: 3px solid #ffffff;
+    outline-offset: 2px;
+}
+
+@media (max-width: 420px) {
+    .shell {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.mic {
+    flex: none;
+    width: 72px;
+    height: 72px;
+    border: none;
+    border-radius: 50%;
+    background: var(--navy);
+    color: var(--light-blue);
+    cursor: pointer;
+    transition: background 0.15s, transform 0.05s;
+}
+
+.mic svg {
+    width: 32px;
+    height: 32px;
+    fill: currentColor;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+}
+
+.mic:active {
+    transform: scale(0.96);
+}
+
+.mic:focus-visible {
+    outline: 3px solid var(--navy);
+    outline-offset: 3px;
+}
+
+.mic.recording {
+    background: var(--red);
+    color: #ffffff;
+    animation: pulse 1.2s ease-in-out infinite;
+}
+
+.mic.busy {
+    opacity: 0.6;
+    cursor: progress;
+}
+
+@keyframes pulse {
+    50% {
+        box-shadow: 0 0 0 10px rgba(217, 54, 54, 0.25);
+    }
+}
+
+.calculator {
+        padding: 16px;
+    }
+
+    .display {
+        height: 120px;
+        font-size: 32px;
+    }
+
+    .keys {
+        gap: 10px;
+    }
+
+    .key {
+        font-size: 24px;
+    }
+}
